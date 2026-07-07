@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+/*
+ * ============================================================
+ * BRAND TOKENS — PLACEHOLDER
+ * ------------------------------------------------------------
+ * These values are a stand-in palette/type system. Swap them
+ * for the real Dealexus brand identity (colors, fonts, radii)
+ * once assets are available — every component in this project
+ * reads from these tokens, so updating them here re-skins the
+ * whole site. See BRANDING.md for the swap checklist.
+ * ============================================================
+ */
+:root {
+  --background: #ffffff;
+  --foreground: #0f172a;
+
+  /* Brand palette (PLACEHOLDER) */
+  --brand-primary: #1d4ed8;
+  --brand-primary-hover: #1e40af;
+  --brand-secondary: #0f172a;
+  --brand-accent: #0ea5a4;
+  --brand-muted: #64748b;
+  --brand-surface: #f8fafc;
+  --brand-border: #e2e8f0;
+
+  /* Typography (PLACEHOLDER) */
+  --font-heading: var(--font-geist-sans);
+  --font-body: var(--font-geist-sans);
+
+  --radius-card: 0.75rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-hover: var(--brand-primary-hover);
+  --color-brand-secondary: var(--brand-secondary);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-muted: var(--brand-muted);
+  --color-brand-surface: var(--brand-surface);
+  --color-brand-border: var(--brand-border);
+
+  --font-sans: var(--font-body);
+  --font-heading: var(--font-heading);
+  --font-mono: var(--font-geist-mono);
+
+  --radius-card: var(--radius-card);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+    --brand-surface: #111827;
+    --brand-border: #1f2937;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body), Arial, Helvetica, sans-serif;
+}
