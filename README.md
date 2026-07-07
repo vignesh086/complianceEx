@@ -61,9 +61,9 @@ src/
   app/            Routes (App Router)
   components/     Shared UI (nav, footer, buttons, cards)
   lib/supabase/   Browser/server Supabase clients + session-refresh proxy
+  proxy.ts        Next.js 16 proxy (formerly middleware) for session refresh
 supabase/
   schema.sql      Database schema and RLS policies
-proxy.ts          Next.js 16 proxy (formerly middleware) for session refresh
 ```
 
 ## Deploying
