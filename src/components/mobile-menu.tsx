@@ -2,14 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { LinkButton } from "@/components/button";
-
-const navLinks = [
-  { href: "/solutions", label: "Solutions" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/about", label: "About" },
-  { href: "/contact", label: "Contact" },
-];
+import { navLinks } from "@/lib/nav-links";
+import { AuthActions } from "@/components/auth-actions";
 
 export function MobileMenu({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [open, setOpen] = useState(false);
@@ -53,21 +47,12 @@ export function MobileMenu({ isLoggedIn }: { isLoggedIn: boolean }) {
               </Link>
             ))}
           </nav>
-          <div className="mt-4 flex flex-col gap-2">
-            {isLoggedIn ? (
-              <LinkButton href="/dashboard" className="w-full" onClick={() => setOpen(false)}>
-                Dashboard
-              </LinkButton>
-            ) : (
-              <>
-                <LinkButton href="/login" variant="secondary" className="w-full">
-                  Log in
-                </LinkButton>
-                <LinkButton href="/signup" className="w-full">
-                  Get started
-                </LinkButton>
-              </>
-            )}
+          <div className="mt-4">
+            <AuthActions
+              isLoggedIn={isLoggedIn}
+              variant="mobile"
+              onNavigate={() => setOpen(false)}
+            />
           </div>
         </div>
       )}

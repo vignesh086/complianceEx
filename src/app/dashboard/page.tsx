@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getSafeUser } from "@/lib/supabase/auth";
 import { Container } from "@/components/container";
+import { inputClasses } from "@/components/form-field";
 import { addComplianceItem } from "./actions";
 import { StatusSelect } from "./status-select";
+import { statusLabels, type ComplianceStatus } from "./status";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -12,33 +15,42 @@ export const metadata: Metadata = {
 type ComplianceItem = {
   id: string;
   title: string;
-  status: "pending" | "in_review" | "complete";
+  status: ComplianceStatus;
   due_date: string | null;
   created_at: string;
 };
 
+function formatDueDate(dateString: string) {
+  // due_date is a plain SQL "date" (no time/timezone). Building the Date
+  // from its Y/M/D parts in local time avoids new Date(dateString) parsing
+  // it as UTC midnight and displaying a day early in negative-UTC zones.
+  const [year, month, day] = dateString.split("-").map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString();
+}
+
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSafeUser();
 
   if (!user) {
     redirect("/login");
   }
 
+  const supabase = await createClient();
   const { data: items } = await supabase
     .from("compliance_items")
     .select("id, title, status, due_date, created_at")
+    .eq("owner", user.id)
     .order("created_at", { ascending: false })
     .returns<ComplianceItem[]>();
 
   const complianceItems = items ?? [];
-  const counts = {
-    pending: complianceItems.filter((item) => item.status === "pending").length,
-    in_review: complianceItems.filter((item) => item.status === "in_review").length,
-    complete: complianceItems.filter((item) => item.status === "complete").length,
-  };
+  const counts = complianceItems.reduce(
+    (acc, item) => {
+      acc[item.status] += 1;
+      return acc;
+    },
+    { pending: 0, in_review: 0, complete: 0 } as Record<ComplianceStatus, number>,
+  );
 
   return (
     <section className="py-12">
@@ -51,21 +63,19 @@ export default async function DashboardPage() {
         </div>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
-          {[
-            { label: "Pending", value: counts.pending },
-            { label: "In review", value: counts.in_review },
-            { label: "Complete", value: counts.complete },
-          ].map((stat) => (
-            <div
-              key={stat.label}
-              className="rounded-[var(--radius-card)] border border-brand-border p-5"
-            >
-              <p className="text-xs text-brand-muted">{stat.label}</p>
-              <p className="mt-1 text-3xl font-bold text-brand-secondary">
-                {stat.value}
-              </p>
-            </div>
-          ))}
+          {(Object.entries(statusLabels) as [ComplianceStatus, string][]).map(
+            ([status, label]) => (
+              <div
+                key={status}
+                className="rounded-[var(--radius-card)] border border-brand-border p-5"
+              >
+                <p className="text-xs text-brand-muted">{label}</p>
+                <p className="mt-1 text-3xl font-bold text-brand-secondary">
+                  {counts[status]}
+                </p>
+              </div>
+            ),
+          )}
         </div>
 
         <div className="mt-10 grid gap-8 lg:grid-cols-[2fr_1fr]">
@@ -93,7 +103,7 @@ export default async function DashboardPage() {
                       </p>
                       {item.due_date && (
                         <p className="text-xs text-brand-muted">
-                          Due {new Date(item.due_date).toLocaleDateString()}
+                          Due {formatDueDate(item.due_date)}
                         </p>
                       )}
                     </div>
@@ -113,12 +123,7 @@ export default async function DashboardPage() {
                 <label htmlFor="title" className="text-xs font-medium text-brand-secondary">
                   Title
                 </label>
-                <input
-                  id="title"
-                  name="title"
-                  required
-                  className="mt-1 w-full rounded-[var(--radius-card)] border border-brand-border bg-background px-3 py-2 text-sm text-brand-secondary focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
-                />
+                <input id="title" name="title" required className={`mt-1 ${inputClasses}`} />
               </div>
               <div>
                 <label htmlFor="dueDate" className="text-xs font-medium text-brand-secondary">
@@ -128,7 +133,7 @@ export default async function DashboardPage() {
                   id="dueDate"
                   name="dueDate"
                   type="date"
-                  className="mt-1 w-full rounded-[var(--radius-card)] border border-brand-border bg-background px-3 py-2 text-sm text-brand-secondary focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+                  className={`mt-1 ${inputClasses}`}
                 />
               </div>
               <button

@@ -1,5 +1,6 @@
 -- ComplianceX schema
 -- Run this in the Supabase SQL editor (or via the CLI) on a fresh project.
+-- Safe to re-run: every table/trigger/policy is dropped-if-exists first.
 
 -- Profile row created for every authenticated user.
 create table if not exists public.profiles (
@@ -11,13 +12,16 @@ create table if not exists public.profiles (
 
 alter table public.profiles enable row level security;
 
+drop policy if exists "Users can view their own profile" on public.profiles;
 create policy "Users can view their own profile"
   on public.profiles for select
   using (auth.uid() = id);
 
+drop policy if exists "Users can update their own profile" on public.profiles;
 create policy "Users can update their own profile"
   on public.profiles for update
-  using (auth.uid() = id);
+  using (auth.uid() = id)
+  with check (auth.uid() = id);
 
 -- Creates a profile row automatically when a user signs up.
 create or replace function public.handle_new_user()
@@ -50,17 +54,16 @@ create table if not exists public.contact_submissions (
 alter table public.contact_submissions enable row level security;
 
 -- Anyone (including anonymous visitors) can submit the contact form.
+drop policy if exists "Anyone can submit a contact request" on public.contact_submissions;
 create policy "Anyone can submit a contact request"
   on public.contact_submissions for insert
   to anon, authenticated
   with check (true);
 
--- Only authenticated staff can read submissions. Tighten this to a
--- specific role/claim before shipping to production.
-create policy "Authenticated users can read contact submissions"
-  on public.contact_submissions for select
-  to authenticated
-  using (true);
+-- Intentionally no SELECT policy: nothing in the app reads this table, so
+-- with RLS enabled and no matching policy, it's insert-only from the client
+-- by default. View submissions via the Supabase dashboard (service role) or
+-- add a policy scoped to a specific staff/admin role if an inbox UI is built.
 
 -- Example compliance items shown on the dashboard demo.
 create table if not exists public.compliance_items (
@@ -74,6 +77,7 @@ create table if not exists public.compliance_items (
 
 alter table public.compliance_items enable row level security;
 
+drop policy if exists "Users manage their own compliance items" on public.compliance_items;
 create policy "Users manage their own compliance items"
   on public.compliance_items for all
   using (auth.uid() = owner)

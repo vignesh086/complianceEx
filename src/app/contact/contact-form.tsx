@@ -3,9 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/button";
-
-const inputClasses =
-  "w-full rounded-[var(--radius-card)] border border-brand-border bg-background px-3.5 py-2.5 text-sm text-brand-secondary placeholder:text-brand-muted focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/20";
+import { inputClasses } from "@/components/form-field";
 
 export function ContactForm() {
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
@@ -25,17 +23,24 @@ export function ContactForm() {
       message: String(formData.get("message") ?? "").trim(),
     };
 
-    const supabase = createClient();
-    const { error } = await supabase.from("contact_submissions").insert(payload);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.from("contact_submissions").insert(payload);
 
-    if (error) {
+      if (error) {
+        setStatus("error");
+        setErrorMessage(error.message);
+        return;
+      }
+
+      setStatus("success");
+      form.reset();
+    } catch (error) {
       setStatus("error");
-      setErrorMessage(error.message);
-      return;
+      setErrorMessage(
+        error instanceof Error ? error.message : "Something went wrong. Please try again.",
+      );
     }
-
-    setStatus("success");
-    form.reset();
   }
 
   if (status === "success") {
